@@ -134,9 +134,10 @@ AutoStereogram = {
         if (same[x] === x) {
           pixels[y][x] = basePixels[y][x]
         } else {
+          // pixels[y][x] = 0;
           pixels[y][x] = pixels[y][same[x]];
           // pixels[y][x] = Math.floor(Math.random()*5);
-          // pixels[y][same[x]] = pixels[y][x];
+          // pixels[y][same[x]] = 0;
         }
       }
     }
