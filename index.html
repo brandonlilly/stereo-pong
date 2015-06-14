@@ -161,14 +161,24 @@
       // basePixels.unshift(lastRow);
 
       // if (t % 10 === 0) {
-        basePixels = generateBase();
+        // basePixels = generateBase();
       // }
+
+      baseSame = AutoStereogram.generateSame(
+        function() { return 0; },
+        {
+          width: width,
+          height: height,
+          mu: (1/3),
+          dpi: 72,
+        }
+      )
+
       paddle = square(35, 90, leftPaddle.x, leftPaddle.y);
       var c = circle(30);
 
-      var pixels = AutoStereogram.drawSurface(
-        bases[t % 3],
-        // basePixels,
+      AutoStereogram.drawSameSurface(
+        baseSame,
         function(x, y) {
           return c(x, y) || paddle(x, y);
         },
@@ -181,21 +191,23 @@
         }
       );
 
-      var pixels = AutoStereogram.drawSurface(
-        // basePixels[t % 20],
-        pixels,
-        function(x, y) {
-          return square(100, 400, 50, 200)(x, y) || square(100, 400, 750, 200)(x, y);
-        },
-        {
-          width: width,
-          height: height,
-          mu: (1/3),
-          dpi: 72,
-          depth: 1,
-        }
-      );
+      // AutoStereogram.drawSurface(
+      //   baseSame,
+      //   function(x, y) {
+      //     return square(100, 400, 50, 200)(x, y) || square(100, 400, 750, 200)(x, y);
+      //   },
+      //   {
+      //     width: width,
+      //     height: height,
+      //     mu: (1/3),
+      //     dpi: 72,
+      //     depth: 1,
+      //   }
+      // );
 
+      var pixels = AutoStereogram.drawSame(baseSame, { width: width, height: height })
+      // console.log('pixels', pixels);
+      // console.log('baseSame', baseSame);
       drawCanvas(ctx, pixels, colors);
   }, 100);
 
