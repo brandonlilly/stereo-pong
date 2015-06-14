@@ -86,4 +86,61 @@ AutoStereogram = {
 
     return pixels;
   },
+
+  drawSurface: function(basePixels, mapFn, options) {
+    var width = options.width;
+    var height = options.height;
+    var dpi = options.dpi;
+    var mu = options.mu;
+
+    var depth = options.depth;
+
+    var sep = this.separation(depth, mu, dpi);
+
+    var pixels = []
+
+    for (var y = 0; y < height; y++) {
+
+      // Pixels on the right constrained to be this color
+      var same = [];
+      for (var x = 0; x < width; x++) {
+        same[x] = x;
+      }
+
+      for (var x = 0; x < width; x++) {
+        if (!mapFn(x, y)) {
+          continue;
+        }
+
+        var left = x - Math.round(sep / 2);
+        var right = left + sep;
+
+        if (left >= 0 && right < width) {
+          for (var k = same[left]; k !== left && k !== right; k = same[left]) {
+            if (k < right) {
+              left = k;
+            } else {
+              left = right;
+              right = k;
+            }
+          }
+          same[left] = right;
+        }
+      }
+
+      pixels[y] = [];
+
+      for (var x = (width - 1); x >= 0; x--) {
+        if (same[x] === x) {
+          pixels[y][x] = basePixels[y][x]
+        } else {
+          pixels[y][x] = pixels[y][same[x]];
+          // pixels[y][x] = Math.floor(Math.random()*5);
+          // pixels[y][same[x]] = pixels[y][x];
+        }
+      }
+    }
+
+    return pixels;
+  }
 }
