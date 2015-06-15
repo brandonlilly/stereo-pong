@@ -15,8 +15,8 @@
   <script>
     var canvas = document.getElementById("pong-canvas");
     var ctx = canvas.getContext("2d");
-    width = 800;
-    height = 400;
+    width = 600;
+    height = 300;
     canvas.width = width;
     canvas.height = height;
     var game = new Pong(ctx, width, height);
@@ -30,11 +30,11 @@
     }
 
     var colors = [
-      [71, 113, 134],
-      [110, 146, 161],
-      [17, 60, 81],
-      [3, 37, 54],
-      [54, 130, 127],
+      // [71, 113, 134],
+      // [110, 146, 161],
+      // [17, 60, 81],
+      // [3, 37, 54],
+      // [54, 130, 127],
       [Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256)],
       [Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256)],
       [Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256)],
@@ -67,6 +67,25 @@
       for (var y = 0; y < pixels.length; y++) {
         for (var x = 0; x < pixels[0].length; x++) {
           var color = colors[pixels[y][x]];
+          // data.push(color[0], color[1], color[2], 255);
+          // data = data.concat(color, 255);
+          // canvasData.data[index + 0] = r;
+          // canvasData.data[index + 1] = g;
+          // canvasData.data[index + 2] = b;
+          // canvasData.data[index + 3] = a;
+          drawPixel(x, y, color[0], color[1], color[2], 255);
+        }
+      }
+
+      // var imageData = ctx.createImageData(width, height);
+      // imageData.data.set(data);
+      ctx.putImageData(canvasData, 0, 0);
+    }
+
+    function drawPixels(ctx, pixels, colors, width, height) {
+      for (var y = 0; y < height; y++) {
+        for (var x = 0; x < width; x++) {
+          var color = colors[pixels[y * width + x]];
           // data.push(color[0], color[1], color[2], 255);
           // data = data.concat(color, 255);
           // canvasData.data[index + 0] = r;
@@ -154,6 +173,16 @@
       bases.push(generateBase());
     }
 
+    var baseSame = AutoStereogram.generateSame(
+      function() { return 0; },
+      {
+        width: width,
+        height: height,
+        mu: (1/3),
+        dpi: 72,
+      }
+    )
+
     var interval = setInterval(function() {
       t += 1;
 
@@ -164,20 +193,20 @@
         // basePixels = generateBase();
       // }
 
-      baseSame = AutoStereogram.generateSame(
-        function() { return 0; },
-        {
-          width: width,
-          height: height,
-          mu: (1/3),
-          dpi: 72,
-        }
-      )
+      // var baseSame = AutoStereogram.generateSame(
+      //   function() { return 0; },
+      //   {
+      //     width: width,
+      //     height: height,
+      //     mu: (1/3),
+      //     dpi: 72,
+      //   }
+      // )
 
       paddle = square(35, 90, leftPaddle.x, leftPaddle.y);
       var c = circle(30);
 
-      AutoStereogram.drawSameSurface(
+      var newSame = AutoStereogram.drawSameSurface(
         baseSame,
         function(x, y) {
           return c(x, y) || paddle(x, y);
@@ -205,11 +234,13 @@
       //   }
       // );
 
-      var pixels = AutoStereogram.drawSame(baseSame, { width: width, height: height })
+      var pixels = AutoStereogram.drawSame(newSame, { width: width, height: height })
       // console.log('pixels', pixels);
       // console.log('baseSame', baseSame);
-      drawCanvas(ctx, pixels, colors);
-  }, 100);
+      // console.log('newSame', newSame);
+      drawPixels(ctx, pixels, colors, width, height);
+      // drawCanvas(ctx, pixels, colors);
+  }, 0);
 
   // setTimeout(function() {
   //   clearInterval(interval);

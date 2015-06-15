@@ -156,14 +156,16 @@ AutoStereogram = {
     var dpi = options.dpi;
     var mu = options.mu;
 
-    var samePixels = [];
+    var samePixels = new Uint16Array(width * height);
     for (var y = 0; y < height; y++) {
 
       // Pixels on the right constrained to be this color
-      var same = [];
+      // var same = [];
       for (var x = 0; x < width; x++) {
-        same[x] = x;
+        samePixels[y * width + x] = x;
       }
+
+
 
       for (var x = 0; x < width; x++) {
         var depth = depthFn(x, y);
@@ -174,19 +176,19 @@ AutoStereogram = {
         var right = left + sep;
 
         if (left >= 0 && right < width) {
-          for (var k = same[left]; k !== left && k !== right; k = same[left]) {
-            if (k < right) {
-              left = k;
-            } else {
-              left = right;
-              right = k;
-            }
-          }
-          same[left] = right;
+          // for (var k = same[left]; k !== left && k !== right; k = same[left]) {
+          //   if (k < right) {
+          //     left = k;
+          //   } else {
+          //     left = right;
+          //     right = k;
+          //   }
+          // }
+          samePixels[y * width + left] = right;
         }
       }
 
-      samePixels[y] = same;
+      // samePixels[y] = same;
     }
 
     return samePixels;
@@ -203,12 +205,14 @@ AutoStereogram = {
 
     var sep = this.separation(depth, mu, dpi);
 
-    for (var y = 0; y < height; y++) {
+    newSame = new Uint16Array(width * height);
 
-      // Pixels on the right constrained to be this color
-      // var samePixels[y] = samePixels[y]
+    for (var y = 0; y < height; y++) {
+      // newSame[y] = [];
 
       for (var x = 0; x < width; x++) {
+        newSame[y * width + x] = samePixels[y * width + x];
+
         if (!mapFn(x, y)) {
           continue;
         }
@@ -217,39 +221,25 @@ AutoStereogram = {
         var right = left + sep;
 
         if (left >= 0 && right < width) {
-          // var l = samePixels[y][left];
-          // while (l !== left && l !== right) {
-          //   if (l < right) {
-          //     left = l;
-          //     l = samePixels[y][left];
-          //   } else {
-          //     samePixels[y][left] = right;
-          //     left = right;
-          //     // l = same[left];
-          //     // right = l;
-          //     l = right;
-          //   }
-          // }
-          samePixels[y][left] = right;
+          newSame[y * width + left] = right;
         }
       }
     }
 
-    return samePixels;
+    return newSame;
   },
 
   drawSame: function(samePixels, options) {
     var width = options.width;
     var height = options.height;
 
-    pixels = [];
+    pixels = new Uint8ClampedArray(width * height);
     for (var y = 0; y < height; y++) {
-      pixels[y] = [];
       for (var x = (width - 1); x >= 0; x--) {
-        if (samePixels[y][x] === x) {
-          pixels[y][x] = Math.floor(Math.random()*5);
+        if (samePixels[y * width + x] === x) {
+          pixels[y * width + x] = Math.floor(Math.random()*5);
         } else {
-          pixels[y][x] = pixels[y][samePixels[y][x]];
+          pixels[y * width + x] = pixels[y * width + samePixels[y * width + x]];
         }
       }
     }
