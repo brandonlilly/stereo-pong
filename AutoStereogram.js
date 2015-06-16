@@ -23,7 +23,6 @@ AutoStereogram = {
     var pixels = [];
     for (var y = 0; y < height; y++) {
 
-      // Pixels on the right constrained to be this color
       var same = [];
       for (var x = 0; x < width; x++) {
         same[x] = x;
@@ -34,33 +33,9 @@ AutoStereogram = {
         var sep = this.separation(depth, mu, dpi);
 
         var left = x - Math.round(sep / 2);
-        // var left = Math.round(x - ((sep + (sep & y & 1)) / 2));
         var right = left + sep;
 
-        // var t = 1;
-        // do {
-        //   var zt = depth + (2 * (2 - (mu * depth)) * t / (mu * this.eyeDistance(dpi)));
-        //   var visible = (depthMap[y][x-t] < zt) && (depthMap[y][x+t] < zt);
-        //   t++;
-        // } while (visible && zt < 1)
-        var visible = true;
-
-        var inBounds = (left >= 0 && right < width);
-
-        if (inBounds && visible) {
-          // var l = same[left];
-          // while (l !== left && l !== right) {
-          //   if (l < right) {
-          //     left = l;
-          //     l = same[left];
-          //   } else {
-          //     same[left] = right;
-          //     left = right;
-          //     // l = same[left];
-          //     // right = l;
-          //     l = right;
-          //   }
-          // }
+        if (left >= 0 && right < width) {
           for (var k = same[left]; k !== left && k !== right; k = same[left]) {
             if (k < right) {
               left = k;
@@ -93,7 +68,6 @@ AutoStereogram = {
     var dpi = options.dpi;
     var mu = options.mu;
 
-
     var depth = options.depth;
 
     var sep = this.separation(depth, mu, dpi);
@@ -117,14 +91,6 @@ AutoStereogram = {
         var right = left + sep;
 
         if (left >= 0 && right < width) {
-          for (var k = same[left]; k !== left && k !== right; k = same[left]) {
-            if (k < right) {
-              left = k;
-            } else {
-              left = right;
-              right = k;
-            }
-          }
           same[left] = right;
         }
       }
@@ -135,10 +101,7 @@ AutoStereogram = {
         if (same[x] === x) {
           pixels[y][x] = basePixels[y][x]
         } else {
-          // pixels[y][x] = 0;
           pixels[y][x] = pixels[y][same[x]];
-          // pixels[y][x] = Math.floor(Math.random()*5);
-          // pixels[y][same[x]] = 0;
         }
       }
     }
@@ -150,56 +113,41 @@ AutoStereogram = {
    * Algorithm by Ian H. Witten, Stuart Inglis and Harold W. Thimbleby
    * http://www.cs.waikato.ac.nz/pubs/wp/1993/uow-cs-wp-1993-02.pdf
    */
-  generateSame: function(depthFn, options) {
+  generatePixelRelations: function(depthFn, options) {
     var width = options.width;
     var height = options.height;
     var dpi = options.dpi;
     var mu = options.mu;
 
     var samePixels = new Uint16Array(width * height);
+
     for (var y = 0; y < height; y++) {
 
-      // Pixels on the right constrained to be this color
-      // var same = [];
       for (var x = 0; x < width; x++) {
         samePixels[y * width + x] = x;
       }
-
-
 
       for (var x = 0; x < width; x++) {
         var depth = depthFn(x, y);
         var sep = this.separation(depth, mu, dpi);
 
         var left = x - Math.round(sep / 2);
-        // var left = Math.round(x - ((sep + (sep & y & 1)) / 2));
         var right = left + sep;
 
         if (left >= 0 && right < width) {
-          // for (var k = same[left]; k !== left && k !== right; k = same[left]) {
-          //   if (k < right) {
-          //     left = k;
-          //   } else {
-          //     left = right;
-          //     right = k;
-          //   }
-          // }
           samePixels[y * width + left] = right;
         }
       }
-
-      // samePixels[y] = same;
     }
 
     return samePixels;
   },
 
-  drawSameSurface: function(samePixels, mapFn, options) {
+  mapSurfaceRelations: function(samePixels, mapFn, options) {
     var width = options.width;
     var height = options.height;
     var dpi = options.dpi;
     var mu = options.mu;
-
 
     var depth = options.depth;
 
@@ -208,8 +156,6 @@ AutoStereogram = {
     newSame = new Uint16Array(width * height);
 
     for (var y = 0; y < height; y++) {
-      // newSame[y] = [];
-
       for (var x = 0; x < width; x++) {
         newSame[y * width + x] = samePixels[y * width + x];
 
