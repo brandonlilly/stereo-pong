@@ -1,0 +1,19 @@
+{
+  "name": "stereopong",
+  "version": "1.0.0",
+  "description": "Pong rendered in AutoStereograms",
+  "main": "AutoStereogram.js",
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-babel": "^5.1.0",
+    "gulp-uglify": "^1.2.0",
+    "gulp-concat": "^2.5.2",
+    "gulp-plumber": "^1.0.1",
+    "gulp-uglify": "^1.2.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Brandon Lilly",
+  "license": "ISC"
+}

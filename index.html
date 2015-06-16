@@ -8,15 +8,15 @@
 <body>
   <canvas id="pong-canvas" style="border: 1px solid black; margin: 200px auto; display: block"></canvas>
 
-  <script src="AutoStereogram.js"></script>
-  <script src="pong.js"></script>
-  <script src="keymaster.js"></script>
+  <script src="compiled/application.js"></script>
 
   <script>
+    "use strict";
+
     var canvas = document.getElementById("pong-canvas");
     var ctx = canvas.getContext("2d");
-    width = 600;
-    height = 300;
+    const width = 800;
+    const height = 400;
     canvas.width = width;
     canvas.height = height;
     var game = new Pong(ctx, width, height);
@@ -69,11 +69,6 @@
       };
     }
 
-    leftPaddle = {
-      x: 150,
-      y: 50,
-    }
-
     document.onkeydown = function(e) {
       switch (e.keyCode) {
         case 87:
@@ -87,25 +82,45 @@
       }
     };
 
-    var baseSame = AutoStereogram.generatePixelRelations(
-      function() { return 0; },
-      {
-        width: width,
-        height: height,
-        mu: (1/3),
-        dpi: 72,
-      }
-    )
+    const stereogramOptions = {
+      width,
+      height,
+      mu: (1/3),
+      dpi: 72
+    };
+
+    let baseSame = AutoStereogram.generatePixelRelations(
+      function() {
+        return 0;
+      },
+      stereogramOptions
+    );
+
+    let paddle = new Paddle({
+      width: 35,
+      height: 90,
+      x: 150,
+      y: 50,
+    });
+
+    let ball = new Ball({
+      radius: 30,
+      x: 350,
+      y: 180,
+      xVel: 0,
+      yVel: 0,
+    });
 
     var interval = setInterval(function() {
       t += 1;
 
-      paddle = square(35, 90, leftPaddle.x, leftPaddle.y);
-      var c = circle(30);
+      ball.pos.y = 180 + Math.cos(t * 0.1) * 100;
 
       var newSame = AutoStereogram.mapSurfaceRelations(
         baseSame,
-        function(x, y) { return c(x, y) || paddle(x, y); },
+        function(x, y) {
+          return ball.shape(x, y) || paddle.shape(x, y);
+        },
         {
           width: width,
           height: height,
@@ -117,7 +132,7 @@
 
       var pixels = AutoStereogram.drawSame(newSame, { width: width, height: height })
       drawPixels(ctx, pixels, colors, width, height);
-  }, 0);
+  }, 1000);
 
   </script>
 </body>
