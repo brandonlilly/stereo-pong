@@ -1,10 +1,52 @@
 class AutoStereogram {
 
+  constructor(ctx, options) {
+    this.ctx = ctx;
+    this.options = options;
+    this.baseRelations = AutoStereogram.generatePixelRelations(
+      () => { return 0; },
+      this.options
+    );
+  }
+
+  drawWithSurface(depth, surfaceFn) {
+    let relations = AutoStereogram.mapSurfaceRelations(
+      this.baseRelations,
+      surfaceFn,
+      {
+        mu: this.options.mu,
+        dpi: this.options.dpi,
+        depth: depth,
+        width: this.options.width,
+        height: this.options.height,
+      }
+    );
+    var pixels = AutoStereogram.drawSame(relations, this.options);
+    AutoStereogram.drawPixels(this.ctx, pixels, this.options);
+  }
+
+  static drawPixels(ctx, pixels, options) {
+    const { width, height, colors } = options;
+    let canvasData = ctx.getImageData(0, 0, width, height);
+    for (var y = 0; y < height; y++) {
+      for (var x = 0; x < width; x++) {
+        const color = options.colors[pixels[y * width + x]];
+        const index = (x + y * width) * 4;
+        canvasData.data[index + 0] = color[0];
+        canvasData.data[index + 1] = color[1];
+        canvasData.data[index + 2] = color[2];
+        canvasData.data[index + 3] = 255;
+      }
+    }
+    ctx.putImageData(canvasData, 0, 0);
+  }
+
+
   /*
    * Algorithm by Ian H. Witten, Stuart Inglis and Harold W. Thimbleby
    * http://www.cs.waikato.ac.nz/pubs/wp/1993/uow-cs-wp-1993-02.pdf
    */
-  generatePixels(depthMap, options) {
+  static generatePixels(depthMap, options) {
     const { width, height, dpi, mu } = options;
 
     var pixels = [];
@@ -49,7 +91,7 @@ class AutoStereogram {
     return pixels;
   }
 
-  drawSurface(basePixels, mapFn, options) {
+  static drawSurface(basePixels, mapFn, options) {
     const { width, height, dpi, mu, depth } = options;
 
     var sep = this._separation(depth, mu, dpi);

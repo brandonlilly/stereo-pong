@@ -5,6 +5,21 @@ class Pong {
     this.width = width;
     this.height = height;
     this.ball = this.newBall();
+
+    this.stereogram = new AutoStereogram(ctx, {
+      width,
+      height,
+      dpi: 72,
+      mu: (1/3),
+      colors: [
+        [71, 113, 134],
+        [110, 146, 161],
+        [17, 60, 81],
+        [3, 37, 54],
+        [54, 130, 127],
+      ],
+    });
+
   }
 
   newBall() {
@@ -12,14 +27,23 @@ class Pong {
       radius: 30,
       x: this.width / 2,
       y: this.height / 2,
-      xVel: 0,
-      yVel: 0,
+      xVel: 4,
+      yVel: 4,
     });
   }
 
   step() {
     this.ball.update();
+    this.render();
+  }
 
+  render() {
+    this.stereogram.drawWithSurface(
+      0.7,
+      (x, y) => {
+        return this.ball.shape(x, y)
+      }
+    );
   }
 
 }
@@ -52,6 +76,10 @@ class Ball {
   update() {
     this.pos.x += this.xVel;
     this.pos.y += this.yVel;
+
+    if (this.pos.y - this.radius < 0 || this.pos.y + this.radius > 400 ) {
+      this.yVel *= -1;
+    }
   }
 
 }

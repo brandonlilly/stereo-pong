@@ -5,11 +5,50 @@ var _createClass = (function () { function defineProperties(target, props) { for
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var AutoStereogram = (function () {
-  function AutoStereogram() {
+  function AutoStereogram(ctx, options) {
     _classCallCheck(this, AutoStereogram);
+
+    this.ctx = ctx;
+    this.options = options;
+    this.baseRelations = AutoStereogram.generatePixelRelations(function () {
+      return 0;
+    }, this.options);
   }
 
   _createClass(AutoStereogram, [{
+    key: "drawWithSurface",
+    value: function drawWithSurface(depth, surfaceFn) {
+      var relations = AutoStereogram.mapSurfaceRelations(this.baseRelations, surfaceFn, {
+        mu: this.options.mu,
+        dpi: this.options.dpi,
+        depth: depth,
+        width: this.options.width,
+        height: this.options.height
+      });
+      var pixels = AutoStereogram.drawSame(relations, this.options);
+      AutoStereogram.drawPixels(this.ctx, pixels, this.options);
+    }
+  }], [{
+    key: "drawPixels",
+    value: function drawPixels(ctx, pixels, options) {
+      var width = options.width;
+      var height = options.height;
+      var colors = options.colors;
+
+      var canvasData = ctx.getImageData(0, 0, width, height);
+      for (var y = 0; y < height; y++) {
+        for (var x = 0; x < width; x++) {
+          var color = options.colors[pixels[y * width + x]];
+          var index = (x + y * width) * 4;
+          canvasData.data[index + 0] = color[0];
+          canvasData.data[index + 1] = color[1];
+          canvasData.data[index + 2] = color[2];
+          canvasData.data[index + 3] = 255;
+        }
+      }
+      ctx.putImageData(canvasData, 0, 0);
+    }
+  }, {
     key: "generatePixels",
 
     /*
@@ -110,7 +149,7 @@ var AutoStereogram = (function () {
 
       return pixels;
     }
-  }], [{
+  }, {
     key: "generatePixelRelations",
 
     /*
@@ -228,6 +267,14 @@ var Pong = (function () {
     this.width = width;
     this.height = height;
     this.ball = this.newBall();
+
+    this.stereogram = new AutoStereogram(ctx, {
+      width: width,
+      height: height,
+      dpi: 72,
+      mu: 1 / 3,
+      colors: [[71, 113, 134], [110, 146, 161], [17, 60, 81], [3, 37, 54], [54, 130, 127]]
+    });
   }
 
   _createClass(Pong, [{
@@ -237,14 +284,24 @@ var Pong = (function () {
         radius: 30,
         x: this.width / 2,
         y: this.height / 2,
-        xVel: 0,
-        yVel: 0
+        xVel: 4,
+        yVel: 4
       });
     }
   }, {
     key: "step",
     value: function step() {
       this.ball.update();
+      this.render();
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      var _this = this;
+
+      this.stereogram.drawWithSurface(0.7, function (x, y) {
+        return _this.ball.shape(x, y);
+      });
     }
   }]);
 
@@ -283,6 +340,10 @@ var Ball = (function () {
     value: function update() {
       this.pos.x += this.xVel;
       this.pos.y += this.yVel;
+
+      if (this.pos.y - this.radius < 0 || this.pos.y + this.radius > 400) {
+        this.yVel *= -1;
+      }
     }
   }]);
 
