@@ -3,10 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <title>Pong</title>
-
+  <link rel="stylesheet" type="text/css" href="main.css" media="screen" />
 </head>
 <body>
-  <canvas id="pong-canvas" style="border: 1px solid black; margin: 200px auto; display: block"></canvas>
+
+  <h1><span>STEREO</span>PONG</h1>
+  <canvas id="pong-canvas" style="margin: 50px auto 100px auto; display: block"></canvas>
 
   <script src="compiled/application.js"></script>
 
@@ -19,24 +21,19 @@
     const height = 400;
     canvas.width = width;
     canvas.height = height;
-    var game = new Pong(ctx, width, height);
+
+    let player1 = new Human('w', 's');
+    // let player1 = new Computer();
+    let player2 = new Computer();
+    // let player2 = new Human('o', 'l');
+
+    let game = new Pong(ctx, player1, player2, width, height);
 
     setInterval(function() {
+      player1.step(game.ball);
+      player2.step(game.ball);
       game.step();
-    }, 30);
-
-    document.onkeydown = function(e) {
-      switch (e.keyCode) {
-        case 87:
-          paddle.pos.y -= 20;
-          break;
-        case 83:
-          paddle.pos.y += 20;
-          break;
-        default:
-          console.log(e.keyCode);
-      }
-    };
+    }, 30)
 
   </script>
 </body>

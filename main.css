@@ -1,0 +1,15 @@
+body {
+  padding-top: 150px;
+  font-family: 'Open Sans', sans-serif;
+}
+
+h1 {
+  font-size: 48px;
+  text-align: center;
+  font-weight: lighter;
+  color: rgb(140, 140, 140);
+}
+
+h1 span {
+  color: rgb(240, 240, 240);
+}
