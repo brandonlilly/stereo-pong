@@ -7,6 +7,7 @@ class Human {
     this.paddle = new Paddle({
       width: 24,
       height: 80,
+      depth: 0.75,
     });
   }
 
@@ -30,6 +31,7 @@ class Computer {
     this.paddle = new Paddle({
       width: 24,
       height: 80,
+      depth: 0.75,
     });
 
   }

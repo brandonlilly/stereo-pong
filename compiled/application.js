@@ -10,32 +10,74 @@ var AutoStereogram = (function () {
 
     this.ctx = ctx;
     this.options = options;
-    this.baseRelations = AutoStereogram.generatePixelRelations(function () {
+    this.baseRelations = AutoStereogram.mapPixelRelations(function () {
       return 0;
     }, this.options);
   }
 
   _createClass(AutoStereogram, [{
     key: "drawWithSurface",
-    value: function drawWithSurface(depth, surfaceFn) {
-      var relations = AutoStereogram.mapSurfaceRelations(this.baseRelations, surfaceFn, {
-        mu: this.options.mu,
-        dpi: this.options.dpi,
-        depth: depth,
-        width: this.options.width,
-        height: this.options.height
-      });
-      var pixels = AutoStereogram.drawSame(relations, this.options);
-      AutoStereogram.drawPixels(this.ctx, pixels, this.options);
+    value: function drawWithSurface(depthFn) {
+      var relations = AutoStereogram.mapPixelRelations(depthFn, this.options, this.baseRelations);
+      AutoStereogram.drawRelations(this.ctx, relations, this.options);
     }
   }], [{
-    key: "drawPixels",
-    value: function drawPixels(ctx, pixels, options) {
+    key: "mapPixelRelations",
+
+    /*
+     * Algorithm by Ian H. Witten, Stuart Inglis and Harold W. Thimbleby
+     * http://www.cs.waikato.ac.nz/pubs/wp/1993/uow-cs-wp-1993-02.pdf
+     */
+    value: function mapPixelRelations(depthFn, options, baseSame) {
+      var width = options.width;
+      var height = options.height;
+      var dpi = options.dpi;
+      var mu = options.mu;
+
+      var newSame = new Uint16Array(width * height);
+
+      var x = undefined,
+          y = undefined;
+
+      if (!baseSame) {
+        baseSame = new Uint16Array(width * height);
+        for (y = 0; y < height; y++) {
+          for (x = 0; x < width; x++) {
+            baseSame[y * width + x] = x;
+          }
+        }
+      }
+
+      for (y = 0; y < height; y++) {
+        for (x = 0; x < width; x++) {
+          newSame[y * width + x] = baseSame[y * width + x];
+          var depth = depthFn(x, y);
+
+          if (depth === false) {
+            continue;
+          }
+
+          var sep = this._separation(depth, mu, dpi);
+
+          var left = x - Math.round(sep / 2);
+          var right = left + sep;
+          if (left >= 0 && right < width) {
+            newSame[y * width + left] = right;
+          }
+        }
+      }
+
+      return newSame;
+    }
+  }, {
+    key: "drawColors",
+    value: function drawColors(ctx, pixels, options) {
       var width = options.width;
       var height = options.height;
       var colors = options.colors;
 
-      var canvasData = ctx.getImageData(0, 0, width, height);
+      var canvasData = ctx.createImageData(width, height);
+
       for (var y = 0; y < height; y++) {
         for (var x = 0; x < width; x++) {
           var color = options.colors[pixels[y * width + x]];
@@ -50,183 +92,19 @@ var AutoStereogram = (function () {
     }
   }, {
     key: "generatePixels",
-
-    /*
-     * Algorithm by Ian H. Witten, Stuart Inglis and Harold W. Thimbleby
-     * http://www.cs.waikato.ac.nz/pubs/wp/1993/uow-cs-wp-1993-02.pdf
-     */
-    value: function generatePixels(depthMap, options) {
+    value: function generatePixels(samePixels, options) {
       var width = options.width;
       var height = options.height;
-      var dpi = options.dpi;
-      var mu = options.mu;
-
-      var pixels = [];
-      for (var y = 0; y < height; y++) {
-
-        var same = [];
-        for (var x = 0; x < width; x++) {
-          same[x] = x;
-        }
-
-        for (var x = 0; x < width; x++) {
-          var depth = depthMap[y][x];
-          var sep = this._separation(depth, mu, dpi);
-
-          var left = x - Math.round(sep / 2);
-          var right = left + sep;
-
-          if (left >= 0 && right < width) {
-            for (var k = same[left]; k !== left && k !== right; k = same[left]) {
-              if (k < right) {
-                left = k;
-              } else {
-                left = right;
-                right = k;
-              }
-            }
-            same[left] = right;
-          }
-        }
-
-        pixels[y] = [];
-
-        for (var x = width - 1; x >= 0; x--) {
-          if (same[x] === x) {
-            pixels[y][x] = Math.floor(Math.random() * 5);
-          } else {
-            pixels[y][x] = pixels[y][same[x]];
-          }
-        }
-      }
-
-      return pixels;
-    }
-  }, {
-    key: "drawSurface",
-    value: function drawSurface(basePixels, mapFn, options) {
-      var width = options.width;
-      var height = options.height;
-      var dpi = options.dpi;
-      var mu = options.mu;
-      var depth = options.depth;
-
-      var sep = this._separation(depth, mu, dpi);
-
-      var pixels = [];
-
-      for (var y = 0; y < height; y++) {
-
-        // Pixels on the right constrained to be this color
-        var same = [];
-        for (var x = 0; x < width; x++) {
-          same[x] = x;
-        }
-
-        for (var x = 0; x < width; x++) {
-          if (!mapFn(x, y)) {
-            continue;
-          }
-
-          var left = x - Math.round(sep / 2);
-          var right = left + sep;
-
-          if (left >= 0 && right < width) {
-            same[left] = right;
-          }
-        }
-
-        pixels[y] = [];
-
-        for (var x = width - 1; x >= 0; x--) {
-          if (same[x] === x) {
-            pixels[y][x] = basePixels[y][x];
-          } else {
-            pixels[y][x] = pixels[y][same[x]];
-          }
-        }
-      }
-
-      return pixels;
-    }
-  }, {
-    key: "generatePixelRelations",
-
-    /*
-     * Algorithm by Ian H. Witten, Stuart Inglis and Harold W. Thimbleby
-     * http://www.cs.waikato.ac.nz/pubs/wp/1993/uow-cs-wp-1993-02.pdf
-     */
-    value: function generatePixelRelations(depthFn, options) {
-      var width = options.width;
-      var height = options.height;
-      var dpi = options.dpi;
-      var mu = options.mu;
-
-      var samePixels = new Uint16Array(width * height);
-
-      for (var y = 0; y < height; y++) {
-
-        for (var x = 0; x < width; x++) {
-          samePixels[y * width + x] = x;
-        }
-
-        for (var x = 0; x < width; x++) {
-          var depth = depthFn(x, y);
-          var sep = this._separation(depth, mu, dpi);
-
-          var left = x - Math.round(sep / 2);
-          var right = left + sep;
-
-          if (left >= 0 && right < width) {
-            samePixels[y * width + left] = right;
-          }
-        }
-      }
-
-      return samePixels;
-    }
-  }, {
-    key: "mapSurfaceRelations",
-    value: function mapSurfaceRelations(samePixels, mapFn, options) {
-      var width = options.width;
-      var height = options.height;
-      var dpi = options.dpi;
-      var mu = options.mu;
-      var depth = options.depth;
-
-      var sep = this._separation(depth, mu, dpi);
-      var newSame = new Uint16Array(width * height);
-
-      for (var y = 0; y < height; y++) {
-        for (var x = 0; x < width; x++) {
-          newSame[y * width + x] = samePixels[y * width + x];
-
-          if (!mapFn(x, y)) {
-            continue;
-          }
-
-          var left = x - Math.round(sep / 2);
-          var right = left + sep;
-
-          if (left >= 0 && right < width) {
-            newSame[y * width + left] = right;
-          }
-        }
-      }
-
-      return newSame;
-    }
-  }, {
-    key: "drawSame",
-    value: function drawSame(samePixels, options) {
-      var width = options.width;
-      var height = options.height;
+      var colors = options.colors;
 
       var pixels = new Uint16Array(width * height);
-      for (var y = 0; y < height; y++) {
-        for (var x = width - 1; x >= 0; x--) {
+
+      var x = undefined,
+          y = undefined;
+      for (y = 0; y < height; y++) {
+        for (x = width - 1; x >= 0; x--) {
           if (samePixels[y * width + x] === x) {
-            pixels[y * width + x] = Math.floor(Math.random() * 5);
+            pixels[y * width + x] = Math.floor(Math.random() * colors.length);
           } else {
             pixels[y * width + x] = pixels[y * width + samePixels[y * width + x]];
           }
@@ -234,6 +112,40 @@ var AutoStereogram = (function () {
       }
 
       return pixels;
+    }
+  }, {
+    key: "drawRelations",
+
+    // Represent and draw pixel relationships in color
+    // generatePixels and drawColors functions combined (minor optimization)
+    value: function drawRelations(ctx, samePixels, options) {
+      var width = options.width;
+      var height = options.height;
+      var colors = options.colors;
+
+      var canvasData = ctx.createImageData(width, height);
+
+      var x = undefined,
+          y = undefined;
+      for (y = 0; y < height; y++) {
+        for (x = width - 1; x >= 0; x--) {
+          var index = (x + y * width) * 4;
+          if (samePixels[y * width + x] === x) {
+            var color = colors[Math.floor(Math.random() * colors.length)];
+            canvasData.data[index + 0] = color[0];
+            canvasData.data[index + 1] = color[1];
+            canvasData.data[index + 2] = color[2];
+            canvasData.data[index + 3] = 255;
+          } else {
+            var copyIndex = (y * width + samePixels[y * width + x]) * 4;
+            canvasData.data[index + 0] = canvasData.data[copyIndex + 0];
+            canvasData.data[index + 1] = canvasData.data[copyIndex + 1];
+            canvasData.data[index + 2] = canvasData.data[copyIndex + 2];
+            canvasData.data[index + 3] = 255;
+          }
+        }
+      }
+      ctx.putImageData(canvasData, 0, 0);
     }
   }, {
     key: "_separation",
@@ -253,6 +165,135 @@ var AutoStereogram = (function () {
 
   return AutoStereogram;
 })();
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Ball = (function () {
+  function Ball(options) {
+    _classCallCheck(this, Ball);
+
+    var x = options.x;
+    var y = options.y;
+
+    this.pos = { x: x, y: y };
+    this.xVel = options.xVel;
+    this.yVel = options.yVel;
+    this.radius = options.radius;
+    this.depth = options.depth;
+    this.shape = Shapes.defineSphere(this.radius, this.depth, this.pos);
+  }
+
+  _createClass(Ball, [{
+    key: "update",
+    value: function update(paddles, width, height) {
+      var _this = this;
+
+      this.pos.x += this.xVel;
+      this.pos.y += this.yVel;
+
+      if (this.top() < 0 || this.bottom() > height) {
+        this.yVel *= -1;
+      }
+
+      if (this.pos.x - this.radius < 0 || this.pos.x + this.radius > 800) {
+        this.xVel *= -1;
+      }
+
+      paddles.forEach(function (paddle) {
+        if (_this.isCollidedWith(paddle)) {
+          _this.xVel *= -1;
+          _this.yVel += paddle.yVel * 0.7;
+        }
+      });
+    }
+  }, {
+    key: "top",
+    value: function top() {
+      return this.pos.y - this.radius;
+    }
+  }, {
+    key: "bottom",
+    value: function bottom() {
+      return this.pos.y + this.radius;
+    }
+  }, {
+    key: "left",
+    value: function left() {
+      return this.pos.x - this.radius;
+    }
+  }, {
+    key: "right",
+    value: function right() {
+      return this.pos.x + this.radius;
+    }
+  }, {
+    key: "isCollidedWith",
+    value: function isCollidedWith(obj) {
+      var leftCollision = this.left() < obj.right() && this.pos.x > obj.pos.x && this.xVel < 0;
+      var rightCollision = this.right() > obj.left() && this.pos.x < obj.pos.x && this.xVel > 0;
+      var verticalCollision = this.top() < obj.bottom() && this.bottom() > obj.top();
+
+      return verticalCollision && (leftCollision || rightCollision);
+    }
+  }]);
+
+  return Ball;
+})();
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Paddle = (function () {
+  function Paddle(options) {
+    _classCallCheck(this, Paddle);
+
+    var x = options.x;
+    var y = options.y;
+
+    this.pos = { x: x, y: y };
+    this.xVel = 0;
+    this.yVel = 0;
+    this.width = options.width;
+    this.height = options.height;
+    this.depth = options.depth;
+    this.shape = Shapes.defineRect(this.width, this.height, this.depth, this.pos);
+  }
+
+  _createClass(Paddle, [{
+    key: "update",
+    value: function update() {
+      this.pos.x += this.xVel;
+      this.pos.y += this.yVel;
+    }
+  }, {
+    key: "top",
+    value: function top() {
+      return this.pos.y - this.height / 2;
+    }
+  }, {
+    key: "bottom",
+    value: function bottom() {
+      return this.pos.y + this.height / 2;
+    }
+  }, {
+    key: "left",
+    value: function left() {
+      return this.pos.x - this.width / 2;
+    }
+  }, {
+    key: "right",
+    value: function right() {
+      return this.pos.x + this.width / 2;
+    }
+  }]);
+
+  return Paddle;
+})();
 'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -271,7 +312,8 @@ var Human = (function () {
 
     this.paddle = new Paddle({
       width: 24,
-      height: 80
+      height: 80,
+      depth: 0.75
     });
   }
 
@@ -299,7 +341,8 @@ var Computer = (function () {
 
     this.paddle = new Paddle({
       width: 24,
-      height: 80
+      height: 80,
+      depth: 0.75
     });
   }
 
@@ -335,75 +378,58 @@ var _createClass = (function () { function defineProperties(target, props) { for
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Pong = (function () {
-  function Pong(ctx, player1, player2, width, height) {
+  function Pong(options) {
+    var _this = this;
+
     _classCallCheck(this, Pong);
+
+    var ctx = options.ctx;
+    var player1 = options.player1;
+    var player2 = options.player2;
+    var leftScoreEl = options.leftScoreEl;
+    var rightScoreEl = options.rightScoreEl;
+    var width = options.width;
+    var height = options.height;
+    var colors = options.colors;
 
     this.ctx = ctx;
     this.width = width;
     this.height = height;
-    this.ball = this.newBall();
     this.player1 = player1;
     this.player2 = player2;
-    this.paddles = [player1.paddle, player2.paddle];
-    this.player1.paddle.pos.y = this.height / 2;
-    this.player2.paddle.pos.y = this.height / 2;
+    this.paddles = [this.player1.paddle, this.player2.paddle];
+    this.leftScoreEl = leftScoreEl;
+    this.rightScoreEl = rightScoreEl;
+
+    this.ball = this.newBall();
 
     this.stereogram = new AutoStereogram(ctx, {
       width: width,
       height: height,
+      colors: colors,
       dpi: 72,
-      mu: 1 / 3,
-      colors: [[71, 113, 134], [110, 146, 161], [17, 60, 81], [3, 37, 54], [54, 130, 127]]
+      mu: 1 / 3
     });
 
+    this.paddles.forEach(function (paddle) {
+      paddle.pos.y = _this.height / 2;
+    });
     this.leftScore = 0;
     this.rightScore = 0;
   }
 
   _createClass(Pong, [{
-    key: "newBall",
-    value: function newBall() {
-      return new Ball({
-        radius: 28,
-        x: this.width / 2,
-        y: this.height / 2,
-        xVel: Math.floor(Math.random() * 5 + 5) * (Math.round(Math.random()) * 2 - 1),
-        yVel: Math.floor(Math.random() * 12) * (Math.round(Math.random()) * 2 - 1)
-      });
-    }
-  }, {
-    key: "step",
-    value: function step() {
-      this.enforceBoundaries();
-      this.paddles.forEach(function (paddle) {
-        paddle.update();
-      });
-      this.ball.update(this.paddles, this.width, this.height);
-
-      if (this.ball.pos.x < 100) {
-        this.leftScore++;
-        this.ball = this.newBall();
-      }
-
-      if (this.ball.pos.x > this.width - 100) {
-        this.rightScore++;
-        this.ball = this.newBall();
-      }
-
-      this.render();
-    }
-  }, {
     key: "enforceBoundaries",
     value: function enforceBoundaries() {
-      var _this = this;
+      var _this2 = this;
 
       this.paddles.forEach(function (paddle) {
         if (paddle.top() < 0) {
           paddle.pos.y = paddle.height / 2;
         }
 
-        if (paddle.bottom() > _this.height) {
-          paddle.pos.y = _this.height - paddle.height / 2;
+        if (paddle.bottom() > _this2.height) {
+          paddle.pos.y = _this2.height - paddle.height / 2;
         }
       });
 
@@ -411,139 +437,50 @@ var Pong = (function () {
       this.player2.paddle.pos.x = this.width - 150;
     }
   }, {
+    key: "newBall",
+    value: function newBall() {
+      return new Ball({
+        radius: 28,
+        x: this.width / 2,
+        y: this.height / 2,
+        depth: 0.5,
+        xVel: Math.floor(Math.random() * 5 + 5) * (Math.round(Math.random()) * 2 - 1),
+        yVel: Math.floor(Math.random() * 12) * (Math.round(Math.random()) * 2 - 1)
+      });
+    }
+  }, {
+    key: "step",
+    value: function step() {
+      this.paddles.forEach(function (paddle) {
+        paddle.update();
+      });
+      this.ball.update(this.paddles, this.width, this.height);
+      this.enforceBoundaries();
+
+      if (this.ball.pos.x < 100) {
+        this.rightScore++;
+        this.rightScoreEl.innerHTML = this.rightScore;
+        this.ball = this.newBall();
+      }
+
+      if (this.ball.pos.x > this.width - 100) {
+        this.leftScore++;
+        this.leftScoreEl.innerHTML = this.leftScore;
+        this.ball = this.newBall();
+      }
+    }
+  }, {
     key: "render",
     value: function render() {
-      var _this2 = this;
+      var _this3 = this;
 
-      this.stereogram.drawWithSurface(0.7, function (x, y) {
-        return _this2.ball.shape(x, y) || _this2.paddles[0].shape(x, y) || _this2.paddles[1].shape(x, y);
+      this.stereogram.drawWithSurface(function (x, y) {
+        return _this3.paddles[0].shape(x, y) || _this3.paddles[1].shape(x, y) || _this3.ball.shape(x, y);
       });
     }
   }]);
 
   return Pong;
-})();
-
-var Paddle = (function () {
-  function Paddle(options) {
-    _classCallCheck(this, Paddle);
-
-    var x = options.x;
-    var y = options.y;
-
-    this.pos = { x: x, y: y };
-    this.xVel = 0;
-    this.yVel = 0;
-    this.width = options.width;
-    this.height = options.height;
-    this.shape = Shapes.defineRect(this.width, this.height, this.pos);
-  }
-
-  _createClass(Paddle, [{
-    key: "update",
-    value: function update() {
-      this.pos.x += this.xVel;
-      this.pos.y += this.yVel;
-    }
-  }, {
-    key: "top",
-    value: function top() {
-      return this.pos.y - this.height / 2;
-    }
-  }, {
-    key: "bottom",
-    value: function bottom() {
-      return this.pos.y + this.height / 2;
-    }
-  }, {
-    key: "left",
-    value: function left() {
-      return this.pos.x - this.width / 2;
-    }
-  }, {
-    key: "right",
-    value: function right() {
-      return this.pos.x + this.width / 2;
-    }
-  }]);
-
-  return Paddle;
-})();
-
-var Ball = (function () {
-  function Ball(options) {
-    _classCallCheck(this, Ball);
-
-    var x = options.x;
-    var y = options.y;
-
-    this.pos = { x: x, y: y };
-    this.xVel = options.xVel;
-    this.yVel = options.yVel;
-    this.radius = options.radius;
-    this.shape = Shapes.defineCircle(this.radius, this.pos);
-  }
-
-  _createClass(Ball, [{
-    key: "update",
-    value: function update(paddles, width, height) {
-      var _this3 = this;
-
-      this.pos.x += this.xVel;
-      this.pos.y += this.yVel;
-
-      if (this.top() < 0 || this.bottom() > height) {
-        this.yVel *= -1;
-      }
-
-      if (this.pos.x - this.radius < 0 || this.pos.x + this.radius > 800) {
-        this.xVel *= -1;
-      }
-
-      paddles.forEach(function (paddle) {
-        if (_this3.isCollidedWith(paddle)) {
-          _this3.xVel *= -1;
-          _this3.yVel += paddle.yVel * 0.7;
-        }
-      });
-    }
-  }, {
-    key: "top",
-    value: function top() {
-      return this.pos.y - this.radius;
-    }
-  }, {
-    key: "bottom",
-    value: function bottom() {
-      return this.pos.y + this.radius;
-    }
-  }, {
-    key: "left",
-    value: function left() {
-      return this.pos.x - this.radius;
-    }
-  }, {
-    key: "right",
-    value: function right() {
-      return this.pos.x + this.radius;
-    }
-  }, {
-    key: "isCollidedWith",
-    value: function isCollidedWith(obj) {
-      var leftCollision = this.left() < obj.right() && this.left() > obj.left() && this.xVel < 0;
-      var rightCollision = this.right() > obj.left() && this.right() < obj.right() && this.xVel > 0;
-      var bottomCollision = this.bottom() > obj.top() && this.bottom() < obj.bottom();
-      var topCollision = this.top() < obj.bottom() && this.top() > obj.top();
-
-      if ((bottomCollision || topCollision) && (leftCollision || rightCollision)) {
-        console.log(bottomCollision, topCollision, leftCollision, rightCollision);
-      }
-
-      return (bottomCollision || topCollision) && (leftCollision || rightCollision);
-    }
-  }]);
-
-  return Ball;
 })();
 "use strict";
 
@@ -558,26 +495,34 @@ var Shapes = (function () {
 
   _createClass(Shapes, null, [{
     key: "defineRect",
-    value: function defineRect(w, h, pos) {
+    value: function defineRect(w, h, depth, pos) {
       return function (x, y) {
-        return x < pos.x + w / 2 && x > pos.x - w / 2 && (y < pos.y + h / 2 && y > pos.y - h / 2);
+        if (x < pos.x + w / 2 && x > pos.x - w / 2 && (y < pos.y + h / 2 && y > pos.y - h / 2)) {
+          return depth;
+        }
+        return false;
       };
     }
   }, {
     key: "defineCircle",
-    value: function defineCircle(r, pos) {
+    value: function defineCircle(r, depth, pos) {
       return function (x, y) {
-        return Math.sqrt(Math.pow(x - pos.x, 2) + Math.pow(y - pos.y, 2)) < r;
+        if (Math.sqrt(Math.pow(x - pos.x, 2) + Math.pow(y - pos.y, 2)) < r) {
+          return depth;
+        }
+        return false;
       };
     }
   }, {
     key: "defineSphere",
-
-    // todo
-    value: function defineSphere(r, pos) {
-      var depth = 0.5;
+    value: function defineSphere(r, depth, pos) {
       return function (x, y) {
-        return Math.sqrt(Math.pow(x - pos.x, 2) + Math.pow(y - pos.y, 2)) < r;
+        var rDist = Math.sqrt(Math.pow(x - pos.x, 2) + Math.pow(y - pos.y, 2));
+        if (rDist > r) {
+          return false;
+        }
+        var z = Math.sqrt(Math.pow(r, 2) - Math.pow(rDist, 2));
+        return 0.25 * z / r + depth;
       };
     }
   }]);

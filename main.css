@@ -1,6 +1,18 @@
 body {
   padding-top: 150px;
   font-family: 'Open Sans', sans-serif;
+  background: #fff;
+}
+
+.container {
+  width: 800px;
+  margin: auto;
+  position: relative;
+}
+
+#pong-canvas {
+  margin: 50px auto 0 auto;
+  display: block;
 }
 
 h1 {
@@ -12,4 +24,20 @@ h1 {
 
 h1 span {
   color: rgb(240, 240, 240);
+}
+
+#leftScore, #rightScore {
+  font-size: 36px;
+  color: rgba(240, 240, 240, 0.7);
+  padding: 30px;
+  text-align: center;
+  position: absolute;
+}
+
+#leftScore {
+  left: 0;
+}
+
+#rightScore {
+  right: 0;
 }
