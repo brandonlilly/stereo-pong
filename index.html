@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>StereoPong</title>
-  <link rel="stylesheet" type="text/css" href="main.css" media="screen" />
+  <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
 </head>
 <body>
 
@@ -11,6 +11,7 @@
     <h1><span>STEREO</span>PONG</h1>
     <div id="leftScore">0</div><div id="rightScore">0</div>
     <canvas id="pong-canvas"></canvas>
+    <h3 id='startMsg'>press enter to start when you can see the ball in the center</h3>
   </div>
   <script src="compiled/application.js"></script>
 
@@ -43,18 +44,29 @@
       ],
     });
 
-    setInterval(function() {
-      player1.step(game.ball);
-      player2.step(game.ball);
-      game.step();
-    }, 20);
+    game.step();
+    game.render();
 
-    const render = function() {
-      game.render();
-      requestAnimationFrame(render);
-    }
-    render();
+    let started = false;
+    key('return', function() {
+      if (!started) {
+        setInterval(function() {
+          player1.step(game.ball);
+          player2.step(game.ball);
+          game.step();
+        }, 20);
 
+        const render = function() {
+          game.render();
+          requestAnimationFrame(render);
+        }
+        render();
+
+        document.getElementById('startMsg').innerHTML = "";
+        started = true;
+      }
+    });
+    
   </script>
 </body>
 </html>
