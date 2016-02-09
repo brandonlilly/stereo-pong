@@ -10,7 +10,7 @@ Rendition of the simple game Pong, displayed through [autostereograms][wiki] for
 
 
 [gh-page]: https://brandonlilly.github.io/stereo-pong/
-[paper]: http://www.cs.waikato.ac.nz/pubs/wp/1993/uow-cs-wp-1993-02.pdf
+[paper]: http://www.cs.waikato.ac.nz/~ihw/papers/94-HWT-SI-IHW-SIRDS-paper.pdf
 [wiki]: https://en.wikipedia.org/wiki/Autostereogram
 
 [geometry]: http://i.imgur.com/pN65d40.png "Algorithm geometry"
