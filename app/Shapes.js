@@ -1,5 +1,4 @@
 class Shapes {
-
   static defineRect(w, h, depth, pos) {
     return function(x, y) {
       if ((x < pos.x + w/2 && x > pos.x - w/2) &&
@@ -29,5 +28,4 @@ class Shapes {
       return 0.25 * z / r + depth;
     };
   }
-
 }

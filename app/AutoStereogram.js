@@ -1,5 +1,4 @@
 class AutoStereogram {
-
   constructor(ctx, options) {
     this.ctx = ctx;
     this.options = options;

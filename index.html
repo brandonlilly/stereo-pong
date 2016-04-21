@@ -3,14 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <title>StereoPong</title>
+  <link href='https://fonts.googleapis.com/css?family=Raleway:400,300,500,600|Roboto:400,300,500' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
 </head>
 <body>
 
   <div class="container">
-    <h1><span>STEREO</span>PONG</h1>
-    <div id="leftScore">0</div><div id="rightScore">0</div>
-    <canvas id="pong-canvas"></canvas>
+    <h1><span>Stereo</span>Pong</h1>
+    <div class="screen">
+      <div id="leftScore">0</div><div id="rightScore">0</div>
+      <canvas id="pong-canvas"></canvas>
+      <label>
+        <input type="checkbox" value="true" checked>
+        render as stereogram
+      </label>
+    </div>
     <h3 id='startMsg'>press enter to start when you can see the ball in the center</h3>
   </div>
   <script src="compiled/application.js"></script>
@@ -44,7 +51,6 @@
       ],
     });
 
-    game.step();
     game.render();
 
     let started = false;
@@ -66,7 +72,7 @@
         started = true;
       }
     });
-    
+
   </script>
 </body>
 </html>
