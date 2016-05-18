@@ -390,19 +390,19 @@ var _createClass = (function () { function defineProperties(target, props) { for
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 var Pong = (function () {
-  function Pong(options) {
+  function Pong(_ref) {
     var _this = this;
 
-    _classCallCheck(this, Pong);
+    var ctx = _ref.ctx;
+    var player1 = _ref.player1;
+    var player2 = _ref.player2;
+    var leftScoreEl = _ref.leftScoreEl;
+    var rightScoreEl = _ref.rightScoreEl;
+    var width = _ref.width;
+    var height = _ref.height;
+    var colors = _ref.colors;
 
-    var ctx = options.ctx;
-    var player1 = options.player1;
-    var player2 = options.player2;
-    var leftScoreEl = options.leftScoreEl;
-    var rightScoreEl = options.rightScoreEl;
-    var width = options.width;
-    var height = options.height;
-    var colors = options.colors;
+    _classCallCheck(this, Pong);
 
     this.ctx = ctx;
     this.width = width;
@@ -413,6 +413,7 @@ var Pong = (function () {
     this.leftScoreEl = leftScoreEl;
     this.rightScoreEl = rightScoreEl;
 
+    this.stereographic = true;
     this.ball = this.newBall();
 
     this.stereogram = new AutoStereogram(ctx, {
@@ -429,6 +430,10 @@ var Pong = (function () {
     this.enforceBoundaries();
     this.leftScore = 0;
     this.rightScore = 0;
+
+    this.surface = function (x, y) {
+      return _this.paddles[0].shape(x, y) || _this.paddles[1].shape(x, y) || _this.ball.shape(x, y);
+    };
   }
 
   _createClass(Pong, [{
@@ -487,15 +492,11 @@ var Pong = (function () {
   }, {
     key: 'render',
     value: function render() {
-      var _this3 = this;
-
-      var surface = function surface(x, y) {
-        return _this3.paddles[0].shape(x, y) || _this3.paddles[1].shape(x, y) || _this3.ball.shape(x, y);
-      };
-
-      // this.stereogram.drawWithSurface(surface);
-      // this.stereogram.drawFlat(surface);
-      this.drawFlat();
+      if (this.stereographic) {
+        this.stereogram.drawWithSurface(this.surface);
+      } else {
+        this.drawFlat();
+      }
     }
   }, {
     key: 'drawFlat',
@@ -509,19 +510,19 @@ var Pong = (function () {
     }
   }, {
     key: 'drawPaddle',
-    value: function drawPaddle(_ref, color) {
-      var pos = _ref.pos;
-      var width = _ref.width;
-      var height = _ref.height;
+    value: function drawPaddle(_ref2, color) {
+      var pos = _ref2.pos;
+      var width = _ref2.width;
+      var height = _ref2.height;
 
       this.ctx.fillStyle = color;
       this.ctx.fillRect(pos.x - width / 2, pos.y - height / 2, width, height);
     }
   }, {
     key: 'drawBall',
-    value: function drawBall(_ref2, color) {
-      var pos = _ref2.pos;
-      var radius = _ref2.radius;
+    value: function drawBall(_ref3, color) {
+      var pos = _ref3.pos;
+      var radius = _ref3.radius;
 
       this.ctx.fillStyle = '#23709c';
       this.ctx.beginPath();

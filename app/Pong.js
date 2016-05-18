@@ -1,7 +1,5 @@
 class Pong {
-  constructor(options) {
-    let { ctx, player1, player2, leftScoreEl, rightScoreEl } = options;
-    const { width, height, colors } = options;
+  constructor({ ctx, player1, player2, leftScoreEl, rightScoreEl, width, height, colors }) {
     this.ctx = ctx;
     this.width = width;
     this.height = height;
@@ -11,6 +9,7 @@ class Pong {
     this.leftScoreEl = leftScoreEl;
     this.rightScoreEl = rightScoreEl;
 
+    this.stereographic = true;
     this.ball = this.newBall();
 
     this.stereogram = new AutoStereogram(ctx, {
@@ -25,6 +24,12 @@ class Pong {
     this.enforceBoundaries();
     this.leftScore = 0;
     this.rightScore = 0;
+
+    this.surface = (x, y) => {
+      return this.paddles[0].shape(x, y) ||
+      this.paddles[1].shape(x, y) ||
+      this.ball.shape(x, y);
+    };
   }
 
   enforceBoundaries() {
@@ -74,15 +79,11 @@ class Pong {
   }
 
   render() {
-    const surface = (x, y) => {
-      return this.paddles[0].shape(x, y) ||
-             this.paddles[1].shape(x, y) ||
-             this.ball.shape(x, y);
-    };
-
-    // this.stereogram.drawWithSurface(surface);
-    // this.stereogram.drawFlat(surface);
-    this.drawFlat();
+    if (this.stereographic) {
+      this.stereogram.drawWithSurface(this.surface);
+    } else {
+      this.drawFlat();
+    }
   }
 
   drawFlat() {

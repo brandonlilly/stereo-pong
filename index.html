@@ -14,7 +14,7 @@
       <div id="leftScore">0</div><div id="rightScore">0</div>
       <canvas id="pong-canvas"></canvas>
       <label>
-        <input type="checkbox" value="true" checked>
+        <input type="checkbox" value="true" name="stereographic" checked>
         render as stereogram
       </label>
     </div>
@@ -49,6 +49,12 @@
         [23, 57, 74],
         [54, 130, 127],
       ],
+    });
+
+    const checkbox = document.querySelector('input[name=stereographic]');
+    checkbox.addEventListener('change', function(e) {
+      game.stereographic = checkbox.checked;
+      game.render();
     });
 
     game.render();
