@@ -1,6 +1,9 @@
 body {
   padding-top: 150px;
   font-family: 'Open Sans', sans-serif;
+  font-family: 'Roboto', sans-serif;
+  font-family: 'Raleway', sans-serif;
+  /*font-family: 'Helvetica Neue';*/
   background: #fff;
 }
 
@@ -18,11 +21,11 @@ h1, h3 {
 
 h1 {
   font-size: 48px;
-  color: rgb(140, 140, 140);
+  color: rgba(0, 0, 0, 0.5);
 }
 
 h1 span {
-  color: rgb(240, 240, 240);
+  /*color: rgb(240, 240, 240);*/
 }
 
 h3 {

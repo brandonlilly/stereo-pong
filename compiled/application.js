@@ -21,13 +21,13 @@ var AutoStereogram = (function () {
       var relations = AutoStereogram.mapPixelRelations(depthFn, this.options, this.baseRelations);
       AutoStereogram.drawRelations(this.ctx, relations, this.options);
     }
-  }], [{
-    key: "mapPixelRelations",
 
     /*
      * Algorithm by Ian H. Witten, Stuart Inglis and Harold W. Thimbleby
      * http://www.cs.waikato.ac.nz/pubs/wp/1993/uow-cs-wp-1993-02.pdf
      */
+  }], [{
+    key: "mapPixelRelations",
     value: function mapPixelRelations(depthFn, options, baseSame) {
       var width = options.width;
       var height = options.height;
@@ -113,11 +113,11 @@ var AutoStereogram = (function () {
 
       return pixels;
     }
-  }, {
-    key: "drawRelations",
 
     // Represent and draw pixel relationships in color
     // generatePixels and drawColors functions combined (minor optimization)
+  }, {
+    key: "drawRelations",
     value: function drawRelations(ctx, samePixels, options) {
       var width = options.width;
       var height = options.height;
@@ -147,17 +147,17 @@ var AutoStereogram = (function () {
       }
       ctx.putImageData(canvasData, 0, 0);
     }
-  }, {
-    key: "_separation",
 
     // Stereo separation corresponding to position Z
+  }, {
+    key: "_separation",
     value: function _separation(z, mu, dpi) {
       return Math.round((1 - mu * z) * this._eyeDistance(dpi) / (2 - mu * z));
     }
-  }, {
-    key: "_eyeDistance",
 
     // Eye separation assumed to be 2.5 inches
+  }, {
+    key: "_eyeDistance",
     value: function _eyeDistance(dpi) {
       return Math.round(2.5 * dpi);
     }
@@ -172,18 +172,25 @@ var _createClass = (function () { function defineProperties(target, props) { for
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Ball = (function () {
-  function Ball(options) {
+  function Ball(_ref) {
+    var angle = _ref.angle;
+    var radius = _ref.radius;
+    var depth = _ref.depth;
+    var speed = _ref.speed;
+    var x = _ref.x;
+    var y = _ref.y;
+
     _classCallCheck(this, Ball);
 
-    var x = options.x;
-    var y = options.y;
-
     this.pos = { x: x, y: y };
-    this.xVel = options.xVel;
-    this.yVel = options.yVel;
-    this.radius = options.radius;
-    this.depth = options.depth;
-    this.shape = Shapes.defineSphere(this.radius, this.depth, this.pos);
+    this.radius = radius;
+    this.depth = depth;
+    this.speed = speed;
+
+    this.shape = Shapes.defineSphere(radius, depth, this.pos);
+
+    this.xVel = speed * Math.cos(angle);
+    this.yVel = speed * Math.sin(angle);
   }
 
   _createClass(Ball, [{
@@ -194,18 +201,23 @@ var Ball = (function () {
       this.pos.x += this.xVel;
       this.pos.y += this.yVel;
 
-      if (this.top() < 0 || this.bottom() > height) {
+      var topCollision = this.top() < 0 && this.yVel < 0;
+      var bottomCollision = this.bottom() > height && this.yVel > 0;
+      if (topCollision || bottomCollision) {
         this.yVel *= -1;
-      }
-
-      if (this.pos.x - this.radius < 0 || this.pos.x + this.radius > 800) {
-        this.xVel *= -1;
       }
 
       paddles.forEach(function (paddle) {
         if (_this.isCollidedWith(paddle)) {
           _this.xVel *= -1;
           _this.yVel += paddle.yVel * 0.7;
+
+          var MAX_ANGLE = 2.5 * Math.PI / 12;
+          var relativeIntersection = (paddle.pos.y - _this.pos.y) / (paddle.height / 2);
+          var bounceAngle = relativeIntersection * MAX_ANGLE;
+
+          _this.xVel = _this.speed * Math.cos(bounceAngle) * Math.sign(_this.xVel);
+          _this.yVel = _this.speed * -Math.sin(bounceAngle);
         }
       });
     }
@@ -302,8 +314,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var Human = (function () {
   function Human() {
-    var upKey = arguments[0] === undefined ? 'w' : arguments[0];
-    var downKey = arguments[1] === undefined ? 's' : arguments[1];
+    var upKey = arguments.length <= 0 || arguments[0] === undefined ? 'w' : arguments[0];
+    var downKey = arguments.length <= 1 || arguments[1] === undefined ? 's' : arguments[1];
 
     _classCallCheck(this, Human);
 
@@ -371,26 +383,26 @@ var Computer = (function () {
 
   return Computer;
 })();
-"use strict";
+'use strict';
 
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 var Pong = (function () {
-  function Pong(options) {
+  function Pong(_ref) {
     var _this = this;
 
-    _classCallCheck(this, Pong);
+    var ctx = _ref.ctx;
+    var player1 = _ref.player1;
+    var player2 = _ref.player2;
+    var leftScoreEl = _ref.leftScoreEl;
+    var rightScoreEl = _ref.rightScoreEl;
+    var width = _ref.width;
+    var height = _ref.height;
+    var colors = _ref.colors;
 
-    var ctx = options.ctx;
-    var player1 = options.player1;
-    var player2 = options.player2;
-    var leftScoreEl = options.leftScoreEl;
-    var rightScoreEl = options.rightScoreEl;
-    var width = options.width;
-    var height = options.height;
-    var colors = options.colors;
+    _classCallCheck(this, Pong);
 
     this.ctx = ctx;
     this.width = width;
@@ -401,6 +413,7 @@ var Pong = (function () {
     this.leftScoreEl = leftScoreEl;
     this.rightScoreEl = rightScoreEl;
 
+    this.stereographic = true;
     this.ball = this.newBall();
 
     this.stereogram = new AutoStereogram(ctx, {
@@ -414,12 +427,17 @@ var Pong = (function () {
     this.paddles.forEach(function (paddle) {
       paddle.pos.y = _this.height / 2;
     });
+    this.enforceBoundaries();
     this.leftScore = 0;
     this.rightScore = 0;
+
+    this.surface = function (x, y) {
+      return _this.paddles[0].shape(x, y) || _this.paddles[1].shape(x, y) || _this.ball.shape(x, y);
+    };
   }
 
   _createClass(Pong, [{
-    key: "enforceBoundaries",
+    key: 'enforceBoundaries',
     value: function enforceBoundaries() {
       var _this2 = this;
 
@@ -437,24 +455,26 @@ var Pong = (function () {
       this.player2.paddle.pos.x = this.width - 150;
     }
   }, {
-    key: "newBall",
+    key: 'newBall',
     value: function newBall() {
+      var angle = (Math.random() * 2 - 1) * Math.PI / 2.5 + Math.PI * Math.round(Math.random());
+
       return new Ball({
         radius: 28,
         x: this.width / 2,
         y: this.height / 2,
         depth: 0.5,
-        xVel: Math.floor(Math.random() * 5 + 5) * (Math.round(Math.random()) * 2 - 1),
-        yVel: Math.floor(Math.random() * 12) * (Math.round(Math.random()) * 2 - 1)
+        angle: angle,
+        speed: 10
       });
     }
   }, {
-    key: "step",
+    key: 'step',
     value: function step() {
       this.paddles.forEach(function (paddle) {
         paddle.update();
       });
-      this.ball.update(this.paddles, this.width, this.height);
+      this.ball.update(this.paddles, this.width, this.height, this);
       this.enforceBoundaries();
 
       if (this.ball.pos.x < 100) {
@@ -470,13 +490,44 @@ var Pong = (function () {
       }
     }
   }, {
-    key: "render",
+    key: 'render',
     value: function render() {
-      var _this3 = this;
+      if (this.stereographic) {
+        this.stereogram.drawWithSurface(this.surface);
+      } else {
+        this.drawFlat();
+      }
+    }
+  }, {
+    key: 'drawFlat',
+    value: function drawFlat() {
+      this.ctx.fillStyle = '#295278';
+      this.ctx.fillRect(0, 0, this.width, this.height);
 
-      this.stereogram.drawWithSurface(function (x, y) {
-        return _this3.paddles[0].shape(x, y) || _this3.paddles[1].shape(x, y) || _this3.ball.shape(x, y);
-      });
+      this.drawPaddle(this.paddles[0], '#23709c');
+      this.drawPaddle(this.paddles[1], '#23709c');
+      this.drawBall(this.ball, '#23709c');
+    }
+  }, {
+    key: 'drawPaddle',
+    value: function drawPaddle(_ref2, color) {
+      var pos = _ref2.pos;
+      var width = _ref2.width;
+      var height = _ref2.height;
+
+      this.ctx.fillStyle = color;
+      this.ctx.fillRect(pos.x - width / 2, pos.y - height / 2, width, height);
+    }
+  }, {
+    key: 'drawBall',
+    value: function drawBall(_ref3, color) {
+      var pos = _ref3.pos;
+      var radius = _ref3.radius;
+
+      this.ctx.fillStyle = '#23709c';
+      this.ctx.beginPath();
+      this.ctx.arc(pos.x, pos.y, radius, 0, 2 * Math.PI, false);
+      this.ctx.fill();
     }
   }]);
 
@@ -497,7 +548,7 @@ var Shapes = (function () {
     key: "defineRect",
     value: function defineRect(w, h, depth, pos) {
       return function (x, y) {
-        if (x < pos.x + w / 2 && x > pos.x - w / 2 && (y < pos.y + h / 2 && y > pos.y - h / 2)) {
+        if (x < pos.x + w / 2 && x > pos.x - w / 2 && y < pos.y + h / 2 && y > pos.y - h / 2) {
           return depth;
         }
         return false;

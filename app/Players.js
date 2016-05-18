@@ -1,5 +1,4 @@
 class Human {
-
   constructor(upKey = 'w', downKey = 's') {
     this.upKey = upKey;
     this.downKey = downKey;
@@ -22,11 +21,9 @@ class Human {
       this.paddle.yVel += 8;
     }
   }
-
 }
 
 class Computer {
-
   constructor() {
     this.paddle = new Paddle({
       width: 24,
@@ -57,5 +54,4 @@ class Computer {
       this.paddle.yVel = -Math.min(dist * -1, maxSpeed);
     }
   }
-
 }

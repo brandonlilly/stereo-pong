@@ -1,5 +1,4 @@
 class Paddle {
-
   constructor(options) {
     const { x, y } = options;
     this.pos = { x, y };
@@ -31,5 +30,4 @@ class Paddle {
   right() {
     return this.pos.x + this.width / 2;
   }
-
 }

@@ -1,8 +1,5 @@
 class Pong {
-
-  constructor(options) {
-    let { ctx, player1, player2, leftScoreEl, rightScoreEl } = options;
-    const { width, height, colors } = options;
+  constructor({ ctx, player1, player2, leftScoreEl, rightScoreEl, width, height, colors }) {
     this.ctx = ctx;
     this.width = width;
     this.height = height;
@@ -12,6 +9,7 @@ class Pong {
     this.leftScoreEl = leftScoreEl;
     this.rightScoreEl = rightScoreEl;
 
+    this.stereographic = true;
     this.ball = this.newBall();
 
     this.stereogram = new AutoStereogram(ctx, {
@@ -23,8 +21,15 @@ class Pong {
     });
 
     this.paddles.forEach((paddle) => { paddle.pos.y = this.height / 2 });
+    this.enforceBoundaries();
     this.leftScore = 0;
     this.rightScore = 0;
+
+    this.surface = (x, y) => {
+      return this.paddles[0].shape(x, y) ||
+      this.paddles[1].shape(x, y) ||
+      this.ball.shape(x, y);
+    };
   }
 
   enforceBoundaries() {
@@ -43,19 +48,21 @@ class Pong {
   }
 
   newBall() {
+    const angle = (Math.random() * 2 - 1) * Math.PI / 2.5 + Math.PI * Math.round(Math.random());
+
     return new Ball({
       radius: 28,
       x: this.width / 2,
       y: this.height / 2,
       depth: 0.5,
-      xVel: Math.floor(Math.random() * 5 + 5) * (Math.round(Math.random()) * 2 - 1),
-      yVel: Math.floor(Math.random() * 12) * (Math.round(Math.random()) * 2 - 1),
+      angle,
+      speed: 10,
     });
   }
 
   step() {
     this.paddles.forEach((paddle) => { paddle.update() });
-    this.ball.update(this.paddles, this.width, this.height);
+    this.ball.update(this.paddles, this.width, this.height, this);
     this.enforceBoundaries();
 
     if (this.ball.pos.x < 100) {
@@ -72,11 +79,31 @@ class Pong {
   }
 
   render() {
-    this.stereogram.drawWithSurface((x, y) => {
-      return this.paddles[0].shape(x, y) ||
-             this.paddles[1].shape(x, y) ||
-             this.ball.shape(x, y);
-    });
+    if (this.stereographic) {
+      this.stereogram.drawWithSurface(this.surface);
+    } else {
+      this.drawFlat();
+    }
   }
 
+  drawFlat() {
+    this.ctx.fillStyle = '#295278';
+    this.ctx.fillRect(0, 0, this.width, this.height);
+
+    this.drawPaddle(this.paddles[0], '#23709c');
+    this.drawPaddle(this.paddles[1], '#23709c');
+    this.drawBall(this.ball, '#23709c');
+  }
+
+  drawPaddle({ pos, width, height }, color) {
+    this.ctx.fillStyle = color;
+    this.ctx.fillRect(pos.x - width / 2, pos.y - height / 2, width, height)
+  }
+
+  drawBall({ pos, radius }, color) {
+    this.ctx.fillStyle = '#23709c';
+    this.ctx.beginPath();
+    this.ctx.arc(pos.x, pos.y, radius, 0, 2 * Math.PI, false);
+    this.ctx.fill();
+  }
 }
